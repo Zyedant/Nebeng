@@ -25,9 +25,35 @@ class AuthenticatedSessionController extends Controller
     public function store(LoginRequest $request): RedirectResponse
     {
         $request->authenticate();
-
         $request->session()->regenerate();
 
+        $user  = Auth::user();
+
+        /**
+         * PERBAIKAN UTAMA:
+         * Database kamu TIDAK punya kolom `role`,
+         * jadi role kita tentukan dari email (sesuai data yang kamu punya).
+         *
+         * Kalau nanti kamu sudah punya kolom role, tinggal ganti logika ini.
+         */
+        $email = strtolower($user->email ?? '');
+
+        // SUPERADMIN: jangan pakai intended (biar selalu ke landing yang kamu mau)
+        if ($email === 'superadmin@nebeng.com') {
+            $request->session()->forget('url.intended');
+            return redirect('/superadmin');
+        }
+
+        // Role lain boleh pakai intended
+        if ($email === 'admin@nebeng.com') {
+            return redirect()->intended('/admin');
+        }
+
+        if ($email === 'finance@nebeng.com') {
+            return redirect()->intended('/finance');
+        }
+
+        // default (breeze)
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
@@ -39,9 +65,9 @@ class AuthenticatedSessionController extends Controller
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
-
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        // setelah logout selalu ke login
+        return redirect('/login');
     }
 }
