@@ -17,6 +17,12 @@ class DatabaseSeeder extends Seeder
             PartnerSeeder::class,
             PartnerPostSeeder::class,
             PartnerVihecleSeeder::class,
+            OrderSeeder::class,
+            PaymentSeeder::class,
+            RefundSeeder::class,
+            NotificationSeeder::class,
+            WithdrawalHistorySeeder::class,
+            PartnerPostWithdrawalHistorySeeder::class
         ]);
     }
 }
