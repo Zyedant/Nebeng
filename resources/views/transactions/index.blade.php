@@ -11,7 +11,7 @@
         </h1>
 
         <div class="flex items-center justify-between">
-            <form action="{{ route('transactions.index') }}" method="GET" class="relative w-64">
+            <form action="{{ route('sa.transaksi') }}" method="GET" class="relative w-64">
                 <input
                     type="text"
                     name="search"
@@ -27,7 +27,7 @@
                 </svg>
             </form>
 
-            <form action="{{ route('transactions.index') }}" method="GET">
+            <form action="{{ route('sa.transaksi') }}" method="GET">
                 <select
                     name="status"
                     onchange="this.form.submit()"

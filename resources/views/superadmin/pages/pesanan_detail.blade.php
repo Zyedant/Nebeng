@@ -19,29 +19,23 @@
     }
 
     // =========================
-    // THEME TAMPILAN PER STATUS (card, page tone)
+    // THEME TAMPILAN PER STATUS
     // =========================
-    $pageTone = '';          // optional tone wrapper
-    $cardTone = 'bg-white';  // default card bg
-    $muted    = '';          // untuk "batal" biar pudar
+    $pageTone = '';
+    $muted    = '';
 
-    if ($s === 'selesai') {
-        $cardTone = 'bg-emerald-50';
-        $pageTone = '';
-        $muted    = '';
-    } elseif ($s === 'batal') {
-        $cardTone = 'bg-red-50';
-        $pageTone = '';
-        $muted    = 'opacity-70';
-    } else { // proses
-        $cardTone = 'bg-amber-50';
-        $pageTone = '';
-        $muted    = '';
+    if ($s === 'batal') {
+        $muted = 'opacity-70';
     }
 
     $customer = $order->customer;
-    $mitra = $order->mitra;
-    $vehicle = $mitra?->partner?->vehicles?->first();
+    $mitra    = $order->mitra;
+
+    /**
+     * AMAN untuk relasi vehicles:
+     * - kalau vehicles hasMany -> Collection, ambil first()
+     * - kalau vehicles hasOne  -> Model langsung
+     */
 
     // format tanggal
     $tanggalText = '—';
@@ -60,14 +54,14 @@
     $distanceKm  = $order->distance_km ?? null;
     $durationMin = $order->duration_min ?? null;
 
-    // pembayaran (kalau ada)
+    // pembayaran
     $paymentMethod = $order->payment_method ?? null;
     $transactionNo = $order->transaction_no ?? null;
 @endphp
 
 <div class="px-8 pb-10 font-['Urbanist'] {{ $pageTone }}">
 
-    {{-- Header kecil: Back + Title --}}
+    {{-- Header --}}
     <div class="mt-2 flex items-center gap-3">
         <a href="{{ route('sa.transaksi') }}"
            class="w-9 h-9 rounded-lg bg-white border border-slate-200 flex items-center justify-center hover:bg-slate-50">
@@ -92,11 +86,11 @@
         </div>
     </div>
 
-    {{-- GRID ATAS: Customer + Mitra --}}
+    {{-- GRID ATAS --}}
     <div class="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-5 {{ $muted }}">
 
-        {{-- CARD CUSTOMER --}}
-       <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+        {{-- CUSTOMER --}}
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <div class="w-12 h-12 rounded-xl bg-white/70 overflow-hidden flex items-center justify-center border border-slate-100">
@@ -139,7 +133,7 @@
             </div>
         </div>
 
-        {{-- CARD MITRA --}}
+        {{-- MITRA --}}
         <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
@@ -184,28 +178,28 @@
                 <div>
                     <div class="text-[11px] text-slate-500 mb-1">Kendaraan</div>
                     <div class="h-9 rounded-lg bg-white/70 px-3 flex items-center text-[12px] text-slate-700 border border-slate-100">
-                        {{ $vehicle->vehicle_type ?? '—' }}
+                        {{ $vehicle?->vehicle_type ?? '—' }}
                     </div>
                 </div>
 
                 <div>
                     <div class="text-[11px] text-slate-500 mb-1">Merk Kendaraan</div>
                     <div class="h-9 rounded-lg bg-white/70 px-3 flex items-center text-[12px] text-slate-700 border border-slate-100">
-                        {{ $vehicle->vehicle_brand ?? '—' }}
+                        {{ $vehicle?->vehicle_brand ?? '—' }}
                     </div>
                 </div>
 
                 <div>
                     <div class="text-[11px] text-slate-500 mb-1">Plat Nomor Kendaraan</div>
                     <div class="h-9 rounded-lg bg-white/70 px-3 flex items-center text-[12px] text-slate-700 border border-slate-100">
-                        {{ $vehicle->plate_number ?? '—' }}
+                        {{ $vehicle?->plate_number ?? '—' }}
                     </div>
                 </div>
 
                 <div>
                     <div class="text-[11px] text-slate-500 mb-1">Warna Kendaraan</div>
                     <div class="h-9 rounded-lg bg-white/70 px-3 flex items-center text-[12px] text-slate-700 border border-slate-100">
-                        {{ $vehicle->color ?? '—' }}
+                        {{ $vehicle?->color ?? '—' }}
                     </div>
                 </div>
             </div>
@@ -213,7 +207,7 @@
 
     </div>
 
-    {{-- GRID BAWAH: Rincian Perjalanan + Pembayaran --}}
+    {{-- GRID BAWAH --}}
     <div class="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-5 {{ $muted }}">
 
         {{-- Rincian Perjalanan --}}
@@ -257,7 +251,7 @@
         </div>
 
         {{-- Rincian Pembayaran --}}
-      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
             <div class="text-[13px] font-semibold text-slate-900">Rincian Pembayaran</div>
 
             <div class="mt-3 grid grid-cols-2 gap-4">
@@ -291,6 +285,7 @@
                 </div>
             </div>
         </div>
+
     </div>
 
     <script>

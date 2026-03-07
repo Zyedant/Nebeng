@@ -11,8 +11,9 @@ class Notification extends Model
 
     protected $fillable = [
         'user_id',
+        'type',        // ✅ TAMBAH (kolom ada di DB)
         'title',
-        'description',
+        'description', // ✅ pakai ini (bukan message)
         'read'
     ];
 

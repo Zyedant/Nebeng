@@ -68,7 +68,6 @@
 
         <div class="min-w-0">
           <div class="text-[16px] font-semibold text-slate-900 leading-tight truncate">{{ $displayName }}</div>
-          <div class="text-[12px] text-slate-500 truncate">Nebeng Motor</div>
           <div class="text-[12px] text-slate-500 truncate">{{ $roleText }}</div>
         </div>
 
@@ -147,14 +146,27 @@
         </div>
 
         {{-- Tanggal Lahir --}}
-        <div>
-          <div class="text-[12px] text-slate-600 mb-1">Tanggal Lahir</div>
-          <input type="date" name="birth_date" value="{{ old('birth_date', $u->birth_date ?? '') }}"
-                 {{ $editProfile ? '' : 'disabled' }}
-                 class="w-full h-10 px-4 rounded-lg border border-slate-200 text-[13px]
-                        {{ $editProfile ? 'bg-white' : 'bg-[#F3FAFF]' }}
-                        focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-300" />
-        </div>
+@php
+  $birthDateVal = old('birth_date');
+  if (!$birthDateVal && !empty($u?->birth_date)) {
+      try {
+          $birthDateVal = \Carbon\Carbon::parse($u->birth_date)->format('Y-m-d');
+      } catch (\Exception $e) {
+          $birthDateVal = null;
+      }
+  }
+@endphp
+
+  <div>
+      <div class="text-[12px] text-slate-600 mb-1">Tanggal Lahir</div>
+      <input type="date"
+            name="birth_date"
+            value="{{ $birthDateVal }}"
+            {{ $editProfile ? '' : 'disabled' }}
+            class="w-full h-10 px-4 rounded-lg border border-slate-200 text-[13px]
+                    {{ $editProfile ? 'bg-white' : 'bg-[#F3FAFF]' }}
+                    focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-300" />
+    </div>
 
         {{-- Jenis Kelamin --}}
         <div>

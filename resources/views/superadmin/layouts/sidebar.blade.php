@@ -24,22 +24,22 @@
 
         // Mitra (parent + child)
         $isMitraParent = request()->routeIs('sa.mitra*');
-        $isMitraDaftar = request()->routeIs('sa.mitra.daftar');
-        $isMitraKendaraan = request()->routeIs('sa.mitra.kendaraan');
+        $isMitraDaftar = request()->routeIs('sa.mitra.index') || request()->routeIs('sa.mitra.detail') || request()->routeIs('sa.mitra.edit') || request()->routeIs('sa.mitra.update');
+        $isMitraKendaraan = request()->routeIs('sa.mitra.kendaraan') || request()->routeIs('sa.mitra.kendaraan.*');
         $isMitraBlokir = request()->routeIs('sa.mitra.blokir');
 
         // Single menus
-        $isCustomer = request()->routeIs('sa.customer');
-        $isPesanan = request()->routeIs('sa.transaksi');
-        $isRefund = request()->routeIs('sa.refund');
-        $isLaporan = request()->routeIs('sa.laporan');
+        $isCustomer = request()->routeIs('sa.customer.*');
+        $isPesanan = request()->routeIs('sa.transaksi') || request()->routeIs('sa.transaksi.*');
+        $isRefund = request()->routeIs('sa.refund.*');
+        $isLaporan = request()->routeIs('sa.laporan') || request()->routeIs('sa.laporan.*');
         $isPengaturan = request()->routeIs('sa.pengaturan');
     @endphp
 
     <nav class="mt-4 px-2 space-y-2">
 
         {{-- Dashboard --}}
-        <a href="{{ route('sa.dashboard') }}"Dashboard
+        <a href="{{ route('sa.dashboard') }}"
            class="flex items-center h-[49px] px-6 rounded-lg transition text-white {{ $isDashboard ? 'bg-white/10' : 'hover:bg-white/10' }}">
             <span class="w-[25.31px] h-[25.31px] flex items-center justify-center">
                 {{-- SVG dari snippet kamu --}}
@@ -92,7 +92,7 @@
                         <path d="M9.375 10.3125C9.375 9.93954 9.52316 9.58185 9.78688 9.31813C10.0506 9.05441 10.4083 8.90625 10.7812 8.90625H14.5312C14.9042 8.90625 15.2619 9.05441 15.5256 9.31813C15.7893 9.58185 15.9375 9.93954 15.9375 10.3125C15.9375 10.6855 15.7893 11.0431 15.5256 11.3069C15.2619 11.5706 14.9042 11.7188 14.5312 11.7188H10.7812C10.4083 11.7188 10.0506 11.5706 9.78688 11.3069C9.52316 11.0431 9.375 10.6855 9.375 10.3125ZM25.3125 6.5625V21.5625C25.3125 22.1841 25.0656 22.7802 24.626 23.2198C24.1865 23.6593 23.5904 23.9062 22.9688 23.9062H2.34375C1.72215 23.9062 1.12601 23.6593 0.686468 23.2198C0.24693 22.7802 0 22.1841 0 21.5625V6.5625C0 5.9409 0.24693 5.34476 0.686468 4.90522C1.12601 4.46568 1.72215 4.21875 2.34375 4.21875H6.5625V3.28125C6.5625 2.41101 6.9082 1.57641 7.52356 0.961056C8.13891 0.345702 8.97351 0 9.84375 0H15.4688C16.339 0 17.1736 0.345702 17.7889 0.961056C18.4043 1.57641 18.75 2.41101 18.75 3.28125V4.21875H22.9688C23.5904 4.21875 24.1865 4.46568 24.626 4.90522C25.0656 5.34476 25.3125 5.9409 25.3125 6.5625ZM9.375 4.21875H15.9375V3.28125C15.9375 3.15693 15.8881 3.0377 15.8002 2.94979C15.7123 2.86189 15.5931 2.8125 15.4688 2.8125H9.84375C9.71943 2.8125 9.6002 2.86189 9.51229 2.94979C9.42439 3.0377 9.375 3.15693 9.375 3.28125V4.21875ZM2.8125 7.03125V11.1598C5.84713 12.7592 9.22593 13.5946 12.6562 13.5938C16.0867 13.5945 19.4656 12.7587 22.5 11.1586V7.03125H2.8125ZM22.5 21.0938V14.2898C19.4059 15.6852 16.0504 16.4066 12.6562 16.4062C9.26204 16.4069 5.90653 15.6854 2.8125 14.2898V21.0938H22.5Z"
                             fill="white"/>
                     </svg>
-             </span>
+                </span>
                 <span class="ml-4 text-[18px] font-medium leading-none">Mitra</span>
 
                 <span id="mitraArrow" class="ml-auto text-white/70 text-xl leading-none transition"
@@ -101,7 +101,7 @@
 
             <div id="mitraSubmenu" class="{{ $isMitraParent ? '' : 'hidden' }}">
                 <a href="{{ route('sa.mitra.index') }}"
-                   class="block h-[49px] px-16 flex items-center rounded-lg transition text-white {{ $isMitraKendaraan ? 'bg-black/30' : 'hover:bg-black/20' }}">
+                   class="block h-[49px] px-16 flex items-center rounded-lg transition text-white {{ $isMitraDaftar ? 'bg-black/30' : 'hover:bg-black/20' }}">
                     <span class="text-[16px] font-medium leading-none">Daftar Mitra</span>
                 </a>
 
@@ -110,9 +110,7 @@
                     <span class="text-[16px] font-medium leading-none">Kendaraan Mitra</span>
                 </a>
 
-                {{-- OPTIONAL: kalau route sa.mitra.blokir belum ada, jangan pakai dulu.
-                     Kalau kamu sudah punya route-nya, biarkan aktif.
-                --}}
+                {{-- OPTIONAL: kalau route sa.mitra.blokir belum ada, jangan pakai dulu. --}}
             </div>
         </div>
 

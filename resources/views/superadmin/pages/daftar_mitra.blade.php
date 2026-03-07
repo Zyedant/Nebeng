@@ -107,75 +107,86 @@
         </div>
 
         {{-- TABLE (✅ samakan feel dengan Customer) --}}
-        <div class="mt-4 rounded-xl border border-slate-100 overflow-hidden">
-            <div class="max-h-[420px] overflow-y-auto overflow-x-hidden">
-                <table class="w-full table-fixed text-[11px]">
-                    <thead class="bg-[#EEF5FF] text-slate-600 font-semibold sticky top-0 z-10">
-                        <tr>
-                            {{-- samakan padding + ukuran gaya customer --}}
-                            <th class="text-left px-2 py-2 w-[90px]">NO. ID</th>
-                            <th class="text-left px-2 py-2 w-[170px]">NAMA</th>
-                            <th class="text-left px-2 py-2 w-[260px]">EMAIL</th>
-                            <th class="text-left px-2 py-2 w-[150px]">NO. TLP</th>
-                            <th class="text-left px-2 py-2 w-[170px]">LAYANAN</th>
-                            <th class="text-left px-2 py-2 w-[140px]">STATUS</th>
-                            <th class="text-center px-2 py-2 w-[70px]">AKSI</th>
+<div class="mt-4 rounded-xl border border-slate-100 overflow-hidden">
+    {{-- penting: jangan hidden X, biar aksi gak kepotong --}}
+    <div class="max-h-[420px] overflow-y-auto overflow-x-auto">
+        <table class="w-full table-fixed text-[11px] min-w-[980px]">
+            <thead class="bg-[#EEF5FF] text-slate-600 font-semibold sticky top-0 z-10">
+                <tr>
+                    <th class="text-left px-2 py-2 w-[90px]">NO. ID</th>
+                    <th class="text-left px-2 py-2 w-[170px]">NAMA</th>
+                    <th class="text-left px-2 py-2 w-[240px]">EMAIL</th>
+
+                    {{-- ✅ diperkecil --}}
+                    <th class="text-left px-2 py-2 w-[120px]">NO. TLP</th>
+
+                    {{-- ✅ diperkecil --}}
+                    <th class="text-left px-2 py-2 w-[130px]">LAYANAN</th>
+
+                    <th class="text-left px-2 py-2 w-[140px]">STATUS</th>
+
+                    {{-- ✅ sedikit dibesar-in biar tombol lega --}}
+                    <th class="text-center px-2 py-2 w-[80px]">AKSI</th>
+                </tr>
+            </thead>
+
+            <tbody class="divide-y divide-slate-100 bg-white">
+                @if($isEmpty)
+                    @for($i=1;$i<=10;$i++)
+                        <tr class="text-slate-300">
+                            <td class="px-2 py-[8px]">—</td>
+                            <td class="px-2 py-[8px]">—</td>
+                            <td class="px-2 py-[8px]">—</td>
+                            <td class="px-2 py-[8px]">—</td>
+                            <td class="px-2 py-[8px]">—</td>
+                            <td class="px-2 py-[8px]">—</td>
+                            <td class="px-2 py-[8px] text-center">
+                                <div class="w-[28px] h-[28px] rounded-[8px] bg-slate-200/60 inline-block"></div>
+                            </td>
                         </tr>
-                    </thead>
+                    @endfor
+                @else
+                    @foreach($rows as $m)
+                        @php
+                            $b = $badge($m->verified_status ?? ($m->status ?? null), $m->is_banned ?? 0);
+                        @endphp
+                        <tr class="text-slate-700">
+                            <td class="px-2 py-[8px] whitespace-nowrap truncate">{{ $m->id ?? '—' }}</td>
+                            <td class="px-2 py-[8px] truncate">{{ $m->name ?? '—' }}</td>
+                            <td class="px-2 py-[8px] truncate">{{ $m->email ?? '—' }}</td>
 
-                    <tbody class="divide-y divide-slate-100 bg-white">
-                        @if($isEmpty)
-                            @for($i=1;$i<=10;$i++)
-                                <tr class="text-slate-300">
-                                    <td class="px-2 py-[8px]">—</td>
-                                    <td class="px-2 py-[8px]">—</td>
-                                    <td class="px-2 py-[8px]">—</td>
-                                    <td class="px-2 py-[8px]">—</td>
-                                    <td class="px-2 py-[8px]">—</td>
-                                    <td class="px-2 py-[8px]">—</td>
-                                    <td class="px-2 py-[8px] text-center">
-                                        <div class="w-[28px] h-[28px] rounded-[8px] bg-slate-200/60 inline-block"></div>
-                                    </td>
-                                </tr>
-                            @endfor
-                        @else
-                            @foreach($rows as $m)
-                                @php
-                                    $b = $badge($m->verified_status ?? ($m->status ?? null), $m->is_banned ?? 0);
-                                @endphp
-                                <tr class="text-slate-700">
-                                    <td class="px-2 py-[8px] whitespace-nowrap truncate">{{ $m->id ?? '—' }}</td>
-                                    <td class="px-2 py-[8px] truncate">{{ $m->name ?? '—' }}</td>
-                                    <td class="px-2 py-[8px] truncate">{{ $m->email ?? '—' }}</td>
-                                    <td class="px-2 py-[8px] whitespace-nowrap truncate">{{ $m->phone_number ?? '—' }}</td>
-                                    <td class="px-2 py-[8px] truncate">{{ $m->layanan ?? '—' }}</td>
+                            {{-- ✅ no tlp dipadatkan --}}
+                            <td class="px-2 py-[8px] whitespace-nowrap truncate">{{ $m->phone_number ?? '—' }}</td>
 
-                                    <td class="px-2 py-[8px]">
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold {{ $b['class'] }}">
-                                            {{ $b['text'] }}
-                                        </span>
-                                    </td>
+                            {{-- ✅ layanan dipadatkan --}}
+                            <td class="px-2 py-[8px] truncate">{{ $m->layanan ?? '—' }}</td>
 
-                                    <td class="px-2 py-[8px] text-center">
-                                        <a href="{{ route('sa.mitra.detail', ['id' => $m->id]) }}"
-                                           class="w-[30px] h-[30px] rounded-[8px] bg-[#0B3A82] text-white
-                                                  inline-flex items-center justify-center hover:opacity-90 transition"
-                                           title="Detail">
-                                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none">
-                                                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"
-                                                      stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                                                <path d="M12 15a3 3 0 1 0 0-6a3 3 0 0 0 0 6Z"
-                                                      stroke="currentColor" stroke-width="2"/>
-                                            </svg>
-                                        </a>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        @endif
-                    </tbody>
-                </table>
-            </div>
-        </div>
+                            <td class="px-2 py-[8px]">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold {{ $b['class'] }}">
+                                    {{ $b['text'] }}
+                                </span>
+                            </td>
+
+                            <td class="px-2 py-[8px] text-center">
+                                <a href="{{ route('sa.mitra.detail', ['id' => $m->id]) }}"
+                                   class="w-[30px] h-[30px] rounded-[8px] bg-[#0B3A82] text-white
+                                          inline-flex items-center justify-center hover:opacity-90 transition"
+                                   title="Detail">
+                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none">
+                                        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"
+                                              stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                                        <path d="M12 15a3 3 0 1 0 0-6a3 3 0 0 0 0 6Z"
+                                              stroke="currentColor" stroke-width="2"/>
+                                    </svg>
+                                </a>
+                            </td>
+                        </tr>
+                    @endforeach
+                @endif
+            </tbody>
+        </table>
+    </div>
+</div>
 
         {{-- FOOTER + PAGINATION --}}
         <div class="mt-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 text-[12px] text-slate-400">

@@ -16,9 +16,14 @@ class Refund extends Model
         'status'
     ];
 
+    /**
+     * FIX UTAMA:
+     * refunds.order_id -> pesanan.id
+     * (bukan orders.id)
+     */
     public function order()
     {
-        return $this->belongsTo(Order::class);
+        return $this->belongsTo(Pesanan::class, 'order_id');
     }
 
     public function getStatusTextAttribute()
@@ -26,8 +31,8 @@ class Refund extends Model
         return match($this->status) {
             'Diproses' => 'Diproses',
             'Diterima' => 'Diterima',
-            'Ditolak' => 'Ditolak',
-            default => 'Unknown'
+            'Ditolak'  => 'Ditolak',
+            default    => 'Unknown'
         };
     }
 
@@ -51,8 +56,8 @@ class Refund extends Model
         return match($this->status) {
             'Diterima' => 'bg-green-100 text-green-800',
             'Diproses' => 'bg-yellow-100 text-yellow-800',
-            'Ditolak' => 'bg-red-100 text-red-800',
-            default => 'bg-gray-100 text-gray-800'
+            'Ditolak'  => 'bg-red-100 text-red-800',
+            default    => 'bg-gray-100 text-gray-800'
         };
     }
 }

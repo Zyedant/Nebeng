@@ -103,7 +103,7 @@
                 <table class="w-full table-fixed text-[11px]">
                     <thead class="bg-[#EEF5FF] text-slate-600 font-semibold sticky top-0 z-10">
                         <tr>
-                            <th class="text-left px-2 py-2 w-[60px]">NO</th>
+                            <th class="text-left px-2 py-2 w-[55px]">NO ID</th>
                             <th class="text-left px-2 py-2 w-[300px]">NAMA</th>
                             <th class="text-left px-2 py-2 w-[90px]">KEND</th>
                             <th class="text-left px-2 py-2 w-[140px]">MERK</th>
@@ -139,7 +139,7 @@
 
                                 <tr class="align-middle">
                                     {{-- NO --}}
-                                    <td class="px-2 py-[6px] truncate">{{ $idx + 1 }}</td>
+                                    <td class="px-2 py-[6px] truncate">{{ $r['vehicle_id'] ?? '—' }}</td>
 
                                     {{-- NAMA --}}
                                     <td class="px-2 py-[6px]">

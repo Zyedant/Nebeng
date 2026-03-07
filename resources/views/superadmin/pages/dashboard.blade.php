@@ -2,6 +2,12 @@
 
 @section('content')
 @php
+    // =========================
+    // ROLE FLAG
+    // =========================
+    $isSuperadmin = auth()->check() && method_exists(auth()->user(), 'isSuperadmin') && auth()->user()->isSuperadmin();
+    $isAdmin      = auth()->check() && method_exists(auth()->user(), 'isAdmin') && auth()->user()->isAdmin();
+
     // Pastikan format chart selalu 4 item
     $pesananChart = is_array($pesananChart ?? null) ? $pesananChart : [0,0,0,0];
     $pesananChart = array_pad($pesananChart, 4, 0);
@@ -10,13 +16,12 @@
     $maxVal = max($pesananChart);
 
     // ====== NICE SCALE (maxY ikut data, rapi) ======
-    // Tentukan step berdasarkan skala data
     if ($maxVal <= 0) {
         $step = 5;
         $maxY = 5;
     } elseif ($maxVal <= 20) {
         $step = 5;
-        $maxY = (int) ceil($maxVal / $step) * $step;     // contoh 4 => 5, 18 => 20
+        $maxY = (int) ceil($maxVal / $step) * $step;
     } elseif ($maxVal <= 100) {
         $step = 10;
         $maxY = (int) ceil($maxVal / $step) * $step;
@@ -39,25 +44,42 @@
     }
 
     // ====== HITUNG BAR HEIGHT ======
-   $barArea = 228; // 260px tinggi container - 32px (bottom-8) = 228px
+    $barArea = 228; // 260px tinggi container - 32px (bottom-8) = 228px
     $bars = array_map(function($v) use ($maxY, $barArea) {
-    if ($maxY <= 0) return 0;
-    if ($v <= 0) return 0; // nol beneran nol
-    return ($v / $maxY) * $barArea; // biarin decimal
-}, $pesananChart);
-@endphp
+        if ($maxY <= 0) return 0;
+        if ($v <= 0) return 0;
+        return ($v / $maxY) * $barArea;
+    }, $pesananChart);
 
+    // ==========================================================
+    // DATA DEFAULT PENDAPATAN (AMAN)
+    // ==========================================================
+    $financeMonthLabel   = $financeMonthLabel ?? ($periodeLabel ?? now()->locale('id')->translatedFormat('M Y'));
+    $pendapatanBulanIni  = $pendapatanBulanIni ?? 0;
+    $rekeningLabel       = $rekeningLabel ?? null;
+    $financeNoteLeft     = $financeNoteLeft ?? 'Keterangan';
+    $financeNoteRight    = $financeNoteRight ?? 'Total bulan ini';
+    $totalRefundDiterima    = $totalRefundDiterima ?? 0;
+    $refundDiterimaBulanIni = $refundDiterimaBulanIni ?? 0;
+
+    // Data chart pendapatan: 12 bulan (tahun ini) [Jan..Dec]
+    $pendapatanPerBulan = $pendapatanSeries ?? array_fill(0, 12, 0);
+    if (!is_array($pendapatanPerBulan)) $pendapatanPerBulan = array_fill(0, 12, 0);
+    $pendapatanPerBulan = array_pad($pendapatanPerBulan, 12, 0);
+    $pendapatanPerBulan = array_slice($pendapatanPerBulan, 0, 12);
+
+    $tahunPendapatan = $tahunPendapatan ?? now()->year;
+@endphp
 
 <div class="space-y-6 font-['Urbanist']">
 
-    {{-- STAT CARDS (match UI) --}}
+    {{-- STAT CARDS --}}
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
 
         {{-- Total Mitra --}}
         <div class="bg-white rounded-xl border border-slate-100 px-5 py-4 flex items-center justify-between shadow-sm">
             <div class="flex items-center gap-4">
                 <div class="w-[6px] h-12 bg-[#1D4ED8] rounded-full"></div>
-
                 <div>
                     <div class="text-[30px] font-semibold text-slate-900 leading-none">
                         {{ number_format($totalMitra ?? 0, 0, ',', '.') }}
@@ -77,7 +99,6 @@
         <div class="bg-white rounded-xl border border-slate-100 px-5 py-4 flex items-center justify-between shadow-sm">
             <div class="flex items-center gap-4">
                 <div class="w-[6px] h-12 bg-[#1D4ED8] rounded-full"></div>
-
                 <div>
                     <div class="text-[30px] font-semibold text-slate-900 leading-none">
                         {{ number_format($totalPelanggan ?? 0, 0, ',', '.') }}
@@ -97,7 +118,6 @@
         <div class="bg-white rounded-xl border border-slate-100 px-5 py-4 flex items-center justify-between shadow-sm">
             <div class="flex items-center gap-4">
                 <div class="w-[6px] h-12 bg-[#1D4ED8] rounded-full"></div>
-
                 <div>
                     <div class="text-[30px] font-semibold text-slate-900 leading-none">
                         {{ number_format($verifMitra ?? 0, 0, ',', '.') }}
@@ -119,7 +139,6 @@
         <div class="bg-white rounded-xl border border-slate-100 px-5 py-4 flex items-center justify-between shadow-sm">
             <div class="flex items-center gap-4">
                 <div class="w-[6px] h-12 bg-[#1D4ED8] rounded-full"></div>
-
                 <div>
                     <div class="text-[30px] font-semibold text-slate-900 leading-none">
                         {{ number_format($verifPelanggan ?? 0, 0, ',', '.') }}
@@ -129,7 +148,6 @@
             </div>
 
             <div class="w-11 h-11 rounded-xl bg-[#EEF5FF] flex items-center justify-center">
-                {{-- SVG kamu tetap --}}
                 <svg class="w-59 h-59" viewBox="0 0 59 59" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <g clip-path="url(#clip0_vp_1690_5623)">
                         <path d="M35.1465 36.0776C37.8591 33.945 39.8394 31.0199 40.8118 27.7093C41.7842 24.3987 41.7005 20.8672 40.5721 17.6065C39.4438 14.3457 37.327 11.5177 34.5164 9.51616C31.7058 7.51459 28.3412 6.43896 24.8907 6.43896C21.4402 6.43896 18.0755 7.51459 15.2649 9.51616C12.4543 11.5177 10.3375 14.3457 9.2092 17.6065C8.08087 20.8672 7.9971 24.3987 8.96954 27.7093C9.94198 31.0199 11.9223 33.945 14.6348 36.0776C10.2726 37.8564 6.41771 40.686 3.41328 44.3146C2.94141 44.8763 2.712 45.6025 2.77554 46.3334C2.83907 47.0642 3.19034 47.7399 3.75207 48.2118C4.3138 48.6837 5.03998 48.9131 5.77085 48.8496C6.50172 48.786 7.17742 48.4347 7.6493 47.873C10.8044 44.1164 16.3633 39.6407 24.8907 39.6407C33.418 39.6407 38.9769 44.1164 42.132 47.873C42.6039 48.4347 43.2796 48.786 44.0105 48.8496C44.7414 48.9131 45.4675 48.6837 46.0293 48.2118C46.591 47.7399 46.9423 47.0642 47.0058 46.3334C47.0693 45.6025 46.8399 44.8763 46.368 44.3146C43.3644 40.6852 39.5093 37.8555 35.1465 36.0776Z" fill="#10367D"/>
@@ -143,13 +161,403 @@
                 </svg>
             </div>
         </div>
-
     </div>
 
-    {{-- ROW: PESANAN + TUJUAN --}}
+    {{-- =========================
+        BARIS 2:
+        Superadmin : Pendapatan | Tujuan Terbanyak
+        Admin      : Pesanan    | Tujuan Terbanyak
+    ========================= --}}
+    @if($isSuperadmin)
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+
+            {{-- CARD PENDAPATAN (WHITE) + TOGGLE NOMINAL --}}
+            <div class="bg-white rounded-[18px] border border-slate-100 p-6 shadow-sm relative overflow-hidden min-h-[240px]">
+                {{-- Accent bar kiri --}}
+                <div class="absolute left-0 top-0 bottom-0 w-[4px] bg-[#1D4ED8]"></div>
+
+                {{-- Ornamen halus --}}
+                <div class="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-[#1D4ED8]/5"></div>
+
+                @php
+                    $pendapatanRaw = (float) ($pendapatanTotal ?? 0);
+                    $pendapatanFormatted = 'Rp ' . number_format($pendapatanRaw, 0, ',', '.');
+                    $pendapatanMasked = 'Rp ••••••';
+                @endphp
+
+                <div class="relative z-10">
+                    {{-- Header --}}
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <div class="text-[25px] text-slate-500 font-medium">Pendapatan</div>
+
+                            {{-- NOMINAL + EYE --}}
+                            <div class="mt-2 flex items-center gap-3">
+                                <div id="pendapatanValue"
+                                     class="text-[30px] font-semibold text-slate-900 leading-none">
+                                    {{ $pendapatanFormatted }}
+                                </div>
+
+                                {{-- tombol mata: untuk hide/show nominal --}}
+                                <button type="button"
+                                    id="pendapatanToggleBtn"
+                                    class="w-10 h-10 rounded-xl border border-slate-100 bg-slate-50 hover:bg-slate-100 transition flex items-center justify-center"
+                                    aria-label="Tampilkan/Sembunyikan Pendapatan"
+                                    data-shown="1"
+                                    data-value="{{ $pendapatanFormatted }}"
+                                    data-masked="{{ $pendapatanMasked }}">
+                                    {{-- icon eye open --}}
+                                    <svg id="eyeOpen" width="20" height="20" viewBox="0 0 24 24" class="text-slate-500">
+                                        <path d="M3 12s3.5-7 9-7 9 7 9 7-3.5 7-9 7-9-7-9-7Z" fill="none" stroke="currentColor" stroke-width="2"/>
+                                        <path d="M12 15a3 3 0 1 0 0-6a3 3 0 0 0 0 6Z" fill="none" stroke="currentColor" stroke-width="2"/>
+                                    </svg>
+                                    {{-- icon eye off (hidden default) --}}
+                                    <svg id="eyeOff" width="20" height="20" viewBox="0 0 24 24" class="text-slate-500 hidden">
+                                        <path d="M3 12s3.5-7 9-7 9 7 9 7-3.5 7-9 7-9-7-9-7Z" fill="none" stroke="currentColor" stroke-width="2"/>
+                                        <path d="M4 4l16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- Bulan + dropdown icon --}}
+                        <div class="flex items-center gap-2">
+                            <div class="text-[12px] text-slate-500 font-medium">
+                                {{ $financeMonthLabel ?? (now()->locale('id')->translatedFormat('M Y')) }}
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Divider --}}
+                    <div class="mt-5 h-px bg-slate-100"></div>
+                    <br>
+
+                    {{-- No Rekening --}}
+                    <div class="mt-4">
+                        <div class="flex items-center justify-between">
+                            <div class="text-[16px] text-slate-500">No. Rekening</div>
+
+                            <div class="text-[13px] font-semibold text-slate-900">
+                                {{ $rekeningLabel ?? '-' }}
+                            </div>
+                        </div>
+                        <br><br>
+                        <hr>
+                    </div>
+
+                    {{-- Note bawah --}}
+                    @php
+                        $noteText = $financeNoteLeft ?? 'Keterangan';
+
+                        if (str_contains($noteText, 'Naik')) {
+                            $noteColor = 'text-green-600';
+                        } elseif (str_contains($noteText, 'Turun')) {
+                            $noteColor = 'text-red-600';
+                        } else {
+                            $noteColor = 'text-slate-400';
+                        }
+                    @endphp
+
+                    <div class="mt-4 flex items-center justify-between text-[12px]">
+                        <div class="{{ $noteColor }} font-medium">
+                            {{ $noteText }}
+                        </div>
+
+                        <div class="font-medium text-slate-700">
+                            {{ $financeNoteRight ?? 'Total bulan ini' }}
+                        </div>
+                    </div>
+                    @if(($refundDiterimaBulanIni ?? 0) > 0)
+                        <div class="mt-2 flex items-center justify-between text-[12px]">
+                            <div class="text-slate-400 font-medium">
+                                Refund diterima (memotong pendapatan)
+                            </div>
+                            <div class="font-semibold text-red-600">
+                                - Rp {{ number_format((int)($refundDiterimaBulanIni ?? 0), 0, ',', '.') }}
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            {{-- TUJUAN TERBANYAK (kanan) --}}
+            <div class="bg-white rounded-xl border border-slate-100 p-5 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <div class="text-[25px] font-semibold text-slate-900">Tujuan Terbanyak</div>
+                  <form method="GET" class="flex items-center gap-2">
+                        <select name="ym" onchange="this.form.submit()"
+                                class="text-[12px] bg-transparent outline-none cursor-pointer text-slate-500">
+                            @foreach(($monthOptions ?? []) as $opt)
+                                <option value="{{ $opt['ym'] }}" {{ ($opt['ym'] ?? '') === ($selectedYm ?? '') ? 'selected' : '' }}>
+                                    {{ $opt['label'] }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @foreach(request()->except('ym') as $k => $v)
+                            <input type="hidden" name="{{ $k }}" value="{{ $v }}">
+                        @endforeach
+                    </form>
+                </div>
+
+                <hr class="my-3 border-slate-100">
+
+                @php
+                    $topDestinations = $topDestinations ?? collect();
+                    $rows = $topDestinations->take(7);
+                    $isEmpty = $rows->isEmpty();
+                @endphp
+
+                <div class="overflow-x-auto">
+                    <div class="max-h-[260px] overflow-y-auto pr-1">
+                        <table class="w-full text-left">
+                            <thead>
+                                <tr class="text-[12px] text-slate-400 border-b border-slate-100">
+                                    <th class="py-3 w-[50px] font-medium">No</th>
+                                    <th class="py-3 font-medium">Kota Asal</th>
+                                    <th class="py-3 font-medium">Kota Tujuan</th>
+                                    <th class="py-3 text-right pr-6 font-medium">Tot. Perjalanan</th>
+                                </tr>
+                            </thead>
+
+                            <tbody class="text-[13px] text-slate-600">
+                                @if($isEmpty)
+                                    @for($i=1; $i<=7; $i++)
+                                        <tr class="border-b border-slate-50">
+                                            <td class="py-3 text-slate-400">{{ $i }}</td>
+                                            <td class="py-3 text-slate-300">—</td>
+                                            <td class="py-3 text-slate-300">—</td>
+                                            <td class="py-3 text-right text-slate-300">—</td>
+                                        </tr>
+                                    @endfor
+                                @else
+                                    @foreach($rows as $idx => $row)
+                                        <tr class="border-b border-slate-50">
+                                            <td class="py-3 text-slate-400">{{ $idx + 1 }}</td>
+                                            <td class="py-3">{{ $row->kota_asal ?? '-' }}</td>
+                                            <td class="py-3">{{ $row->kota_tujuan ?? '-' }}</td>
+                                            <td class="py-3 text-right pr-6">
+                                                {{ number_format($row->total_perjalanan ?? 0, 0, ',', '.') }}
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                @endif
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        {{-- SCRIPT TOGGLE MATA (HANYA SUPERADMIN) --}}
+        <script>
+        (function() {
+            const btn = document.getElementById('pendapatanToggleBtn');
+            const valueEl = document.getElementById('pendapatanValue');
+            const eyeOpen = document.getElementById('eyeOpen');
+            const eyeOff  = document.getElementById('eyeOff');
+
+            if (!btn || !valueEl) return;
+
+            // key unik (biar tidak bentrok dengan halaman lain)
+            const STORAGE_KEY = 'superadmin_pendapatan_shown';
+
+            function render(isShown) {
+                const realValue = btn.dataset.value;
+                const masked    = btn.dataset.masked;
+
+                if (isShown) {
+                    valueEl.textContent = realValue;
+                    btn.dataset.shown = '1';
+                    if (eyeOpen) eyeOpen.classList.remove('hidden');
+                    if (eyeOff)  eyeOff.classList.add('hidden');
+                } else {
+                    valueEl.textContent = masked;
+                    btn.dataset.shown = '0';
+                    if (eyeOpen) eyeOpen.classList.add('hidden');
+                    if (eyeOff)  eyeOff.classList.remove('hidden');
+                }
+            }
+
+            // Saat load: ambil state terakhir dari localStorage
+            const saved = localStorage.getItem(STORAGE_KEY); // "1" / "0" / null
+            const initialShown = (saved === null) ? true : (saved === '1');
+            render(initialShown);
+
+            // Saat klik: toggle + simpan
+            btn.addEventListener('click', function () {
+                const isShown = this.dataset.shown === '1';
+                const nextShown = !isShown;
+                render(nextShown);
+                localStorage.setItem(STORAGE_KEY, nextShown ? '1' : '0');
+            });
+        })();
+        </script>
+
+    @else
+        {{-- =========================
+            ADMIN: Pesanan (kiri) sejajar dengan Tujuan Terbanyak (kanan)
+        ========================= --}}
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+
+            {{-- PESANAN (kiri) --}}
+            <div class="bg-white rounded-xl border border-slate-100 p-5 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <div class="text-[25px] font-semibold text-slate-900">Pesanan</div>
+                            <form method="GET" class="flex items-center gap-2">
+                                <select name="ym" onchange="this.form.submit()"
+                                        class="text-[12px] bg-transparent outline-none cursor-pointer text-slate-400 hover:text-slate-600">
+                                    @foreach(($monthOptions ?? []) as $opt)
+                                        <option value="{{ $opt['ym'] }}" {{ ($opt['ym'] ?? '') === ($selectedYm ?? '') ? 'selected' : '' }}>
+                                            {{ $opt['label'] }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="opacity-80">
+                                    <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+
+                                @foreach(request()->except('ym') as $k => $v)
+                                    <input type="hidden" name="{{ $k }}" value="{{ $v }}">
+                                @endforeach
+                            </form>
+                        </div>
+                    </div>
+                    <div class="text-[16px] text-slate-400">
+                        {{ $periodeLabel ?? now()->locale('id')->translatedFormat('M Y') }}
+                    </div>
+                </div>
+
+                <hr class="my-3 border-slate-100">
+
+                @php
+                    $totalPesanan = $totalPesanan ?? 0;
+                    $pesananChart = is_array($pesananChart ?? null) ? $pesananChart : [0,0,0,0];
+                    $chartTotal = array_sum($pesananChart);
+                    $isEmptyChart = ($totalPesanan === 0 || $chartTotal === 0);
+                @endphp
+
+                @if($isEmptyChart)
+                    <div class="h-[260px] mt-2 flex items-center justify-center">
+                        <div class="text-slate-400 text-sm bg-slate-50 border border-slate-100 px-4 py-2 rounded-lg">
+                            Belum ada pesanan.
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-4 text-center text-[11px] text-urbanst-400 mt-2">
+                        <div>Nebeng Mobil</div>
+                        <div>Nebeng Motor</div>
+                        <div>Nebeng Barang</div>
+                        <div>Titip Barang</div>
+                    </div>
+                @else
+                    <div class="relative h-[260px] mt-2">
+                        <div class="absolute left-0 top-0 bottom-8 w-[42px] flex flex-col justify-between text-[12px] text-slate-400">
+                            @foreach($tickVals as $t)
+                                <div>{{ $t }}</div>
+                            @endforeach
+                        </div>
+
+                        <div class="absolute left-[42px] right-0 top-0 bottom-8">
+                            <div class="h-full flex flex-col justify-between">
+                                <div class="h-px bg-slate-100"></div>
+                                <div class="h-px bg-slate-100"></div>
+                                <div class="h-px bg-slate-100"></div>
+                                <div class="h-px bg-slate-100"></div>
+                                <div class="h-px bg-slate-100"></div>
+                                <div class="h-px bg-slate-100"></div>
+                            </div>
+                        </div>
+
+                        <div class="absolute left-[42px] right-0 top-0 bottom-8 flex items-end justify-around px-8">
+                            <div class="w-[60px] rounded-[10px]" style="height: {{ $bars[0] }}px; background:#BFE0FF;"></div>
+                            <div class="w-[60px] rounded-[10px]" style="height: {{ $bars[1] }}px; background:#BFE0FF;"></div>
+                            <div class="w-[60px] rounded-[10px]" style="height: {{ $bars[2] }}px; background:#7EC3FF;"></div>
+                            <div class="w-[60px] rounded-[10px]" style="height: {{ $bars[3] }}px; background: linear-gradient(180deg, #8B5CF6 0%, #D8B4FE 100%);"></div>
+                        </div>
+
+                        <div class="absolute left-[42px] right-0 bottom-0 grid grid-cols-4 text-center text-[11px] text-urbanst-400 mt-2 px-6">
+                            <div>Nebeng Mobil</div>
+                            <div>Nebeng Motor</div>
+                            <div>Nebeng Barang</div>
+                            <div>Titip Barang</div>
+                        </div>
+                    </div>
+                @endif
+            </div>
+
+            {{-- TUJUAN TERBANYAK (kanan) --}}
+            <div class="bg-white rounded-xl border border-slate-100 p-5 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <div class="text-[25px] font-semibold text-slate-900">Tujuan Terbanyak</div>
+                    <div class="text-[16px] text-slate-400">
+                        {{ $periodeLabel ?? now()->locale('id')->translatedFormat('M Y') }}
+                    </div>
+                </div>
+
+                <hr class="my-3 border-slate-100">
+
+                @php
+                    $topDestinations = $topDestinations ?? collect();
+                    $rows = $topDestinations->take(7);
+                    $isEmpty = $rows->isEmpty();
+                @endphp
+
+                <div class="overflow-x-auto">
+                    <div class="max-h-[260px] overflow-y-auto pr-1">
+                        <table class="w-full text-left">
+                            <thead>
+                                <tr class="text-[12px] text-slate-400 border-b border-slate-100">
+                                    <th class="py-3 w-[50px] font-medium">No</th>
+                                    <th class="py-3 font-medium">Kota Asal</th>
+                                    <th class="py-3 font-medium">Kota Tujuan</th>
+                                    <th class="py-3 text-right pr-6 font-medium">Tot. Perjalanan</th>
+                                </tr>
+                            </thead>
+
+                            <tbody class="text-[13px] text-slate-600">
+                                @if($isEmpty)
+                                    @for($i=1; $i<=7; $i++)
+                                        <tr class="border-b border-slate-50">
+                                            <td class="py-3 text-slate-400">{{ $i }}</td>
+                                            <td class="py-3 text-slate-300">—</td>
+                                            <td class="py-3 text-slate-300">—</td>
+                                            <td class="py-3 text-right text-slate-300">—</td>
+                                        </tr>
+                                    @endfor
+                                @else
+                                    @foreach($rows as $idx => $row)
+                                        <tr class="border-b border-slate-50">
+                                            <td class="py-3 text-slate-400">{{ $idx + 1 }}</td>
+                                            <td class="py-3">{{ $row->kota_asal ?? '-' }}</td>
+                                            <td class="py-3">{{ $row->kota_tujuan ?? '-' }}</td>
+                                            <td class="py-3 text-right pr-6">
+                                                {{ number_format($row->total_perjalanan ?? 0, 0, ',', '.') }}
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                @endif
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    @endif
+
+    {{-- =========================
+        BARIS 3:
+        HANYA SUPERADMIN
+        Grafik Pesanan + Grafik Pendapatan
+    ========================= --}}
+    @if($isSuperadmin)
     <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
-        {{-- Pesanan --}}
+        {{-- PESANAN (kiri) --}}
         <div class="bg-white rounded-xl border border-slate-100 p-5 shadow-sm">
             <div class="flex items-center justify-between">
                 <div>
@@ -188,13 +596,12 @@
                     <div>Titip Barang</div>
                 </div>
             @else
-
                 <div class="relative h-[260px] mt-2">
                     <div class="absolute left-0 top-0 bottom-8 w-[42px] flex flex-col justify-between text-[12px] text-slate-400">
-    @foreach($tickVals as $t)
-        <div>{{ $t }}</div>
-    @endforeach
-</div>
+                        @foreach($tickVals as $t)
+                            <div>{{ $t }}</div>
+                        @endforeach
+                    </div>
 
                     <div class="absolute left-[42px] right-0 top-0 bottom-8">
                         <div class="h-full flex flex-col justify-between">
@@ -218,69 +625,99 @@
                         <div>Nebeng Mobil</div>
                         <div>Nebeng Motor</div>
                         <div>Nebeng Barang</div>
-                      <div>Titip Barang</div>
+                        <div>Titip Barang</div>
                     </div>
                 </div>
             @endif
         </div>
 
-        {{-- Tujuan Terbanyak --}}
-        <div class="bg-white rounded-xl border border-slate-100 p-5 shadow-sm">
-            <div class="flex items-center justify-between">
-                <div class="text-[25px] font-semibold text-slate-900">Tujuan Terbanyak</div>
-                <div class="text-[16px] text-slate-400">
-                    {{ $periodeLabel ?? now()->locale('id')->translatedFormat('M Y') }}
+        {{-- GRAFIK PENDAPATAN (kanan) --}}
+        <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+            <div class="flex items-start justify-between">
+                <div>
+                    <div class="text-[25px] font-semibold text-slate-900">Pendapatan</div>
+                    <div class="text-[12px] text-slate-500 mt-1">Pendapatan dari perjalanan Nebeng</div>
                 </div>
+
+                {{-- dropdown bulan (tampilan saja) --}}
+                <button type="button"
+                        class="flex items-center gap-2 text-[12px] text-slate-400 hover:text-slate-600">
+                    {{ $financeMonthLabel ?? now()->locale('id')->translatedFormat('M Y') }}
+                </button>
             </div>
 
-            <hr class="my-3 border-slate-100">
-
-            @php
-                $topDestinations = $topDestinations ?? collect();
-                $rows = $topDestinations->take(7);
-                $isEmpty = $rows->isEmpty();
-            @endphp
-
-            <div class="overflow-x-auto">
-  <div class="max-h-[260px] overflow-y-auto pr-1">
-                <table class="w-full text-left">
-                    <thead>
-                        <tr class="text-[12px] text-slate-400 border-b border-slate-100">
-                            <th class="py-3 w-[50px] font-medium">No</th>
-                            <th class="py-3 font-medium">Kota Asal</th>
-                            <th class="py-3 font-medium">Kota Tujuan</th>
-                            <th class="py-3 text-right pr-6 font-medium">Tot. Perjalanan</th>
-                        </tr>
-                    </thead>
-
-                    <tbody class="text-[13px] text-slate-600">
-                        @if($isEmpty)
-                            @for($i=1; $i<=7; $i++)
-                                <tr class="border-b border-slate-50">
-                                    <td class="py-3 text-slate-400">{{ $i }}</td>
-                                    <td class="py-3 text-slate-300">—</td>
-                                    <td class="py-3 text-slate-300">—</td>
-                                    <td class="py-3 text-right text-slate-300">—</td>
-                                </tr>
-                            @endfor
-                        @else
-                            @foreach($rows as $idx => $row)
-                                <tr class="border-b border-slate-50">
-                                    <td class="py-3 text-slate-400">{{ $idx + 1 }}</td>
-                                    <td class="py-3">{{ $row->kota_asal ?? '-' }}</td>
-                                    <td class="py-3">{{ $row->kota_tujuan ?? '-' }}</td>
-                                   <td class="py-3 text-right pr-6">
-                                        {{ number_format($row->total_perjalanan ?? 0, 0, ',', '.') }}
-                                    </td>
-                                </tr>
-                            @endforeach
-                        @endif
-                    </tbody>
-                </table>
+            <div class="mt-4 h-[240px]">
+                <canvas id="pendapatanChartSuperadmin"></canvas>
             </div>
         </div>
-
     </div>
+    @endif
 
 </div>
 @endsection
+
+{{-- Chart script: hanya superadmin (karena canvas hanya ada untuk superadmin) --}}
+@if($isSuperadmin)
+@push('scripts')
+<script>
+(function () {
+    const labels = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    const dataPendapatan = @json($pendapatanPerBulan);
+
+    const canvas = document.getElementById('pendapatanChartSuperadmin');
+    if (!canvas) return;
+
+    if (typeof Chart === 'undefined') {
+        return;
+    }
+
+    const ctx = canvas.getContext('2d');
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Pendapatan',
+                data: dataPendapatan,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 2,
+                pointHoverRadius: 2,
+                pointBorderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    displayColors: false,
+                    callbacks: {
+                        label: function(context) {
+                            const v = context.parsed.y || 0;
+                            return 'Rp ' + v.toLocaleString('id-ID');
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return 'Rp ' + Number(value).toLocaleString('id-ID');
+                        }
+                    }
+                },
+                x: {
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+})();
+</script>
+@endpush
+@endif

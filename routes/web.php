@@ -144,10 +144,10 @@ Route::prefix('superadmin')
         |--------------------------------------------------------------------------
         */
         Route::get('/transaksi', [CustomerController::class, 'transaksi'])->name('transaksi');
+        Route::get('/transaksi/download', [CustomerController::class, 'downloadPesananPdf'])->name('transaksi.download');
         Route::get('/transaksi/{id}', [CustomerController::class, 'transaksiDetail'])
             ->whereNumber('id')
             ->name('transaksi.detail');
-
         /*
         |--------------------------------------------------------------------------
         | REFUND
@@ -159,6 +159,9 @@ Route::prefix('superadmin')
             Route::get('/{id}', [RefundController::class, 'detail'])->whereNumber('id')->name('detail');
             Route::post('/{id}/approve', [RefundController::class, 'approve'])->whereNumber('id')->name('approve');
             Route::post('/{id}/reject',  [RefundController::class, 'reject'])->whereNumber('id')->name('reject');
+             Route::post('/{id}/terima', [RefundController::class, 'terima'])
+        ->whereNumber('id')
+        ->name('terima');
         });
 
         /*
@@ -168,6 +171,7 @@ Route::prefix('superadmin')
         */
         Route::prefix('notifications')->name('notifications.')->group(function () {
             Route::get('/', [NotificationController::class, 'index'])->name('index');
+            Route::get('/latest', [NotificationController::class, 'getLatest'])->name('latest');
             Route::post('/{id}/read', [NotificationController::class, 'markRead'])->whereNumber('id')->name('read');
             Route::post('/read-all',  [NotificationController::class, 'markAllRead'])->name('readAll');
         });

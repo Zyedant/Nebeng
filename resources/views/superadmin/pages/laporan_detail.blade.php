@@ -86,9 +86,17 @@
                         </div>
                     </div>
 
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-semibold bg-white border border-slate-200 text-slate-700">
-                        CUSTOMER
-                    </span>
+                    <div class="flex items-center gap-2">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-semibold bg-white border border-slate-200 text-slate-700">
+                            CUSTOMER
+                        </span>
+
+                        @if($isBanned)
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-semibold bg-red-500 text-white">
+                                DIBLOKIR
+                            </span>
+                        @endif
+                    </div>
                 </div>
 
                 <div class="mt-4 text-[13px] font-semibold text-slate-900">Informasi Customer</div>
@@ -135,9 +143,17 @@
                         </div>
                     </div>
 
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-semibold bg-white border border-slate-200 text-slate-700">
-                        MITRA
-                    </span>
+                   <div class="flex items-center gap-2">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-semibold bg-white border border-slate-200 text-slate-700">
+                            MITRA
+                        </span>
+
+                        @if($isBanned)
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-semibold bg-red-500 text-white">
+                                DIBLOKIR
+                            </span>
+                        @endif
+                    </div>
                 </div>
 
                 <div class="mt-4 text-[13px] font-semibold text-slate-900">Informasi Mitra</div>

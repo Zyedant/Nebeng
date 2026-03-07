@@ -35,6 +35,11 @@ class Partner extends Model
     {
         return $this->hasMany(Partnervihecle::class, 'partner_id');
     }
+    public function vehicles(): HasMany
+{
+    // alias biar relasi standar "vehicles" bisa dipakai
+    return $this->vihecles();
+}
 
     /**
      * Get withdrawal histories for the partner.

@@ -387,23 +387,27 @@
         </form>
 
         <div class="sticky bottom-0 z-40">
-            <div class="max-w-[1200px] mx-auto px-4 md:px-6 pb-4">
-                <div class="bg-white border border-slate-200 shadow-xl rounded-2xl p-4 flex items-center justify-end gap-3">
-                    <button type="button"
-                            onclick="openRejectStep1()"
-                            class="h-11 px-6 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition">
-                        Tolak
-                    </button>
+    <div class="max-w-[1200px] mx-auto px-4 md:px-6 pb-4">
 
-                    {{-- ✅ tombol verifikasi tetap konsep yang kamu pakai (modal confirm submit verifyForm) --}}
-                    <button type="button"
-                            onclick="openVerifyConfirm()"
-                            class="h-11 px-6 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition">
-                        Verifikasi
-                    </button>
-                </div>
-            </div>
+            {{-- BATAL (outline putih seperti gambar) --}}
+            <button type="button"
+                    onclick="openRejectStep1()"
+                    class="h-[44px] px-8 rounded-xl bg-white border border-slate-200 text-slate-700
+                           font-semibold hover:bg-slate-50 active:scale-[0.99] transition">
+                Tolak
+            </button>
+
+            {{-- SIMPAN / VERIFIKASI (biru seperti gambar) --}}
+            <button type="button"
+                    onclick="openVerifyConfirm()"
+                    class="h-[44px] px-8 rounded-xl bg-[#0B3A82] text-white font-semibold
+                           hover:opacity-95 active:scale-[0.99] transition">
+                Verifikassi
+            </button>
+
         </div>
+    </div>
+</div>
     @endif
 
 </div>

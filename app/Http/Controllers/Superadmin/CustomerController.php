@@ -44,58 +44,69 @@ class CustomerController extends Controller
     // CUSTOMER SIDEBAR (LIST ALL)
     // =========================
     public function daftarCustomer()
-    {
-        $q      = request('q');
-        $status = request('status'); // pengajuan|terverifikasi|ditolak|belum|diblok|null
-        $date   = request('date');
+{
+    $q      = request('q');
+    $status = request('status'); // pengajuan|terverifikasi|ditolak|belum|diblok|null
+    $date   = request('date');
 
-        $query = DB::table('users')
-            ->leftJoin('customers', 'customers.user_id', '=', 'users.id')
-            ->select([
-                'users.id as id',
-                'users.name as name',
-                'users.email as email',
-                'users.phone_number as phone_number',
-                'users.verified_status as verified_status',
-                'users.is_banned as is_banned',
-                DB::raw('COALESCE(customers.created_at, users.created_at) as created_at'),
-            ])
-            ->whereRaw($this->normStatusExpr('users.role') . " = ?", ['customer']);
+    $query = DB::table('users')
+        ->leftJoin('customers', 'customers.user_id', '=', 'users.id')
+        ->select([
+            'users.id as id',
+            'users.name as name',
+            'users.email as email',
+            'users.phone_number as phone_number',
+            'users.verified_status as verified_status',
+            'users.is_banned as is_banned',
+            DB::raw('COALESCE(customers.created_at, users.created_at) as created_at'),
+        ])
+        ->whereRaw($this->normStatusExpr('users.role') . " = ?", ['customer']);
 
-        // SEARCH
-        if (!empty($q)) {
-            $query->where(function ($w) use ($q) {
-                $w->where('users.name', 'like', "%{$q}%")
-                    ->orWhere('users.email', 'like', "%{$q}%")
-                    ->orWhere('users.phone_number', 'like', "%{$q}%")
-                    ->orWhere('users.id', 'like', "%{$q}%");
-            });
-        }
+    // SEARCH
+    if (!empty($q)) {
+        $query->where(function ($w) use ($q) {
+            $w->where('users.name', 'like', "%{$q}%")
+              ->orWhere('users.email', 'like', "%{$q}%")
+              ->orWhere('users.phone_number', 'like', "%{$q}%")
+              ->orWhere('users.id', 'like', "%{$q}%");
+        });
+    }
 
-        // FILTER STATUS
-        if ($status !== null && $status !== '') {
-            if ($status === 'diblok') {
-                $query->where('users.is_banned', 1);
-            } elseif ($status === 'belum') {
+    // FILTER STATUS (✅ FIX)
+    if ($status !== null && $status !== '') {
+
+        $status = strtolower(trim($status));
+
+        if ($status === 'diblok') {
+            // hanya yang diblokir
+            $query->where('users.is_banned', 1);
+
+        } else {
+            // ✅ selain diblok, pastikan tidak dibanned
+            $query->where('users.is_banned', 0);
+
+            if ($status === 'belum') {
                 $query->whereNull('users.verified_status');
+
             } else {
+                // pengajuan / terverifikasi / ditolak
                 $query->whereRaw(
                     $this->normStatusExpr('users.verified_status') . " = ?",
-                    [strtolower($status)]
+                    [$status]
                 );
             }
         }
-
-        // FILTER DATE
-        if (!empty($date)) {
-            $query->whereDate(DB::raw('COALESCE(customers.created_at, users.created_at)'), $date);
-        }
-
-        $rows = $query->orderByDesc('users.id')->get();
-
-        return view('superadmin.pages.customer', compact('rows'));
     }
 
+    // FILTER DATE
+    if (!empty($date)) {
+        $query->whereDate(DB::raw('COALESCE(customers.created_at, users.created_at)'), $date);
+    }
+
+    $rows = $query->orderByDesc('users.id')->get();
+
+    return view('superadmin.pages.customer', compact('rows', 'q', 'status', 'date'));
+}
     // =========================
     // DOWNLOAD PDF - VERIFIKASI CUSTOMER
     // =========================
@@ -390,49 +401,97 @@ class CustomerController extends Controller
 
         return back()->with('block_success', true);
     }
-
-    // =========================
-    // PESANAN
-    // =========================
-    public function transaksi(Request $request)
+// =========================
+// PESANAN (LIST)
+// =========================
+ public function transaksi(Request $request)
     {
-        $q = $request->q;
-        $status = $request->status;
-        $date = $request->date;
+        $q      = $request->query('q');
+        $status = $request->query('status');  // proses|selesai|batal
+        $date   = $request->query('date');    // YYYY-MM-DD
 
         $rows = Pesanan::with(['customer', 'mitra'])
             ->when($q, function ($query) use ($q) {
-                $query->where('order_no', 'like', "%{$q}%")
-                    ->orWhereHas('customer', fn($qq) => $qq->where('name', 'like', "%{$q}%"))
-                    ->orWhereHas('mitra', fn($qq) => $qq->where('name', 'like', "%{$q}%"));
+                // ✅ biar OR tidak "lepas" dari query utama, bungkus dalam where(function(){})
+                $query->where(function ($w) use ($q) {
+                    $w->where('order_no', 'like', "%{$q}%")
+                      ->orWhereHas('customer', fn ($qq) => $qq->where('name', 'like', "%{$q}%"))
+                      ->orWhereHas('mitra', fn ($qq) => $qq->where('name', 'like', "%{$q}%"));
+                });
             })
-            ->when($status, fn($query) => $query->where('status', $status))
-            ->when($date, fn($query) => $query->whereDate('tanggal', $date))
+            ->when($status, fn ($query) => $query->where('status', $status))
+            ->when($date, fn ($query) => $query->whereDate('tanggal', $date))
             ->latest('id')
             ->get();
 
-        return view('superadmin.pages.pesanan', compact('rows'));
+        // ✅ karena view kamu namanya pesanan.blade.php
+        return view('superadmin.pages.pesanan', compact('rows', 'q', 'status', 'date'));
     }
 
-   public function transaksiDetail($id)
-{
-      $order = Pesanan::with([
-        'customer',
-        'mitra.partner.vehicles' // ✅ ambil kendaraan mitra
-    ])->findOrFail($id);
+    // =========================
+    // PESANAN DETAIL
+    // =========================
+    public function transaksiDetail($id)
+    {
+        $order = Pesanan::with(['customer', 'mitra'])->findOrFail($id);
 
-    $partnerId = DB::table('partners')
-        ->where('user_id', $order->mitra_id)
-        ->value('id');
-
-    $vehicle = null;
-    if ($partnerId && DB::getSchemaBuilder()->hasTable('partner_vehicles')) {
-        $vehicle = DB::table('partner_vehicles')
-            ->where('partner_id', $partnerId)
-            ->orderByDesc('id')
+        /**
+         * ✅ Ambil kendaraan paling aman:
+         * - Pesanan menyimpan mitra_id (users.id)
+         * - partners menyimpan user_id (users.id)
+         * - partner_vehicles menyimpan partner_id (partners.id)
+         *
+         * Jadi: partners.user_id = pesanan.mitra_id
+         */
+        $vehicle = DB::table('partner_vehicles as pv')
+            ->join('partners as pr', 'pr.id', '=', 'pv.partner_id')
+            ->where('pr.user_id', $order->mitra_id)   // <--- ini kunci
+            ->orderByDesc('pv.id')
+            ->select([
+                'pv.id',
+                'pv.partner_id',
+                'pv.vehicle_type',
+                'pv.vehicle_brand',
+                'pv.plate_number',
+                'pv.color',
+                'pv.created_at',
+                'pv.updated_at',
+            ])
             ->first();
+
+        return view('superadmin.pages.pesanan_detail', compact('order', 'vehicle'));
     }
 
-     return view('superadmin.pages.pesanan_detail', compact('order'));
-}
+    // =========================
+    // DOWNLOAD PDF - PESANAN
+    // =========================
+    public function downloadPesananPdf(Request $request)
+    {
+        $q      = $request->query('q');
+        $status = $request->query('status');
+        $date   = $request->query('date');
+
+        $rows = Pesanan::with(['customer', 'mitra'])
+            ->when($q, function ($query) use ($q) {
+                $query->where(function ($w) use ($q) {
+                    $w->where('order_no', 'like', "%{$q}%")
+                      ->orWhereHas('customer', fn ($qq) => $qq->where('name', 'like', "%{$q}%"))
+                      ->orWhereHas('mitra', fn ($qq) => $qq->where('name', 'like', "%{$q}%"));
+                });
+            })
+            ->when($status, fn ($query) => $query->where('status', $status))
+            ->when($date, fn ($query) => $query->whereDate('tanggal', $date))
+            ->latest('id')
+            ->get();
+
+        $pdf = Pdf::loadView('superadmin.pages.pdf.pesanan_pdf', compact('rows', 'q', 'status', 'date'))
+            ->setPaper('A4', 'portrait');
+
+        $filename = 'pesanan'
+            . ($status ? "-{$status}" : '')
+            . ($date ? "-{$date}" : '')
+            . '.pdf';
+
+        return $pdf->download($filename);
+    }
 }

@@ -99,7 +99,7 @@
         <table class="w-full table-fixed text-[11px]">
                     <thead class="bg-[#EEF5FF] text-slate-600 font-semibold sticky top-0 z-10">
                         <tr>
-                            <th class="text-left px-2 py-2 w-[100px]">NO</th>
+                            <th class="text-left px-2 py-2 w-[100px]">NO ID</th>
                             <th class="text-left px-2 py-2 w-[170px]">NAMA</th>
                             <th class="text-left px-2 py-2 w-[170px]">EMAIL</th>
                             <th class="text-left px-2 py-2 w-[150px]">NO. TLP</th>
@@ -118,7 +118,7 @@
                             @endphp
 
                             <tr>
-                                <td class="px-2 py-[6px] truncate">{{ $i + 1 }}</td>
+                                <td class="px-2 py-[6px] truncate">{{ $c->id ?? '—' }}</td>
                                 <td class="px-2 py-[6px] truncate">{{ $c->name ?? '—' }}</td>
                                 <td class="px-2 py-[6px] truncate">{{ $c->email ?? '—' }}</td>
                                 <td class="px-2 py-[6px] whitespace-nowrap">{{ $c->phone_number ?? '—' }}</td>

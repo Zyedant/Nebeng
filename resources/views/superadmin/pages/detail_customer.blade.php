@@ -15,31 +15,33 @@
     ];
 
     // =========================
-    // STATUS (SAMA SEPERTI detail_mitra: PAKAI FIELD ASLI DARI CONTROLLER)
+    // STATUS (pakai field alias dari controller)
     // =========================
-   $statusRaw  = (string)($customer->user_verified_status ?? '');
+    $statusRaw  = (string)($customer->user_verified_status ?? '');
     $statusNorm = strtolower(trim($statusRaw));
 
-    if ((int)($customer->user_is_banned ?? 0) === 1) {
-    $statusNorm = 'diblok';
-    $statusRaw  = 'diblok';
-}
+    $isBanned = (int)($customer->user_is_banned ?? 0) === 1;
+    if ($isBanned) {
+        $statusNorm = 'diblok';
+        $statusRaw  = 'diblok';
+    }
 
-
+    // tombol aksi hanya kalau masih pengajuan dan belum diblokir
     $isPengajuan = ($statusNorm === '' || $statusNorm === 'pengajuan');
+    $showActions = (!$isBanned) && $isPengajuan;
 
     $statusText  = strtoupper($statusRaw ?: 'PENGAJUAN');
 
     $statusClass = 'bg-slate-100 text-slate-700';
     if ($statusNorm === 'terverifikasi') $statusClass = 'bg-emerald-100 text-emerald-700';
     elseif ($statusNorm === 'ditolak')   $statusClass = 'bg-red-100 text-red-700';
-    elseif ($statusNorm === 'diblok')    $statusClass = 'bg-slate-900 text-white';
+    elseif ($statusNorm === 'diblok')    $statusClass = 'bg-red-100 text-red-700';
     else                                 $statusClass = 'bg-amber-400 text-white';
 
     // =========================
     // AVATAR / LAYANAN / ID
     // =========================
-   $avatar = !empty($customer->user_image) ? asset($customer->user_image) : null;
+    $avatar = !empty($customer->user_image) ? asset($customer->user_image) : null;
     $layanan   = $customer->layanan ?? 'Nebeng Customer';
     $displayId = str_pad((int)($customer->id ?? 0), 6, '0', STR_PAD_LEFT);
 
@@ -97,9 +99,8 @@
                 </div>
             </div>
 
-            {{-- kanan --}}
+            {{-- kanan (hanya Edit, seperti mitra) --}}
             <div class="flex flex-col items-end gap-2">
-
                 @if(\Illuminate\Support\Facades\Route::has('sa.customer.edit'))
                     <a href="{{ route('sa.customer.edit', ['id' => $customer->id]) }}"
                        class="h-9 px-4 rounded-full bg-white/80 border border-slate-200 text-slate-700 text-[12px]
@@ -111,50 +112,6 @@
                                   stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
                         </svg>
                     </a>
-                @endif
-
-                {{-- =========================
-                   ✅ FORM GLOBAL (ANTI 404)
-                   - JANGAN taruh form di modal
-                   ========================= --}}
-                <form id="verifyForm" method="POST"
-                      action="{{ route('sa.verifikasi.customer.verify', ['id' => $customer->id]) }}"
-                      class="hidden">
-                    @csrf
-                </form>
-
-                <form id="rejectForm" method="POST"
-                      action="{{ route('sa.verifikasi.customer.reject', ['id' => $customer->id]) }}"
-                      class="hidden">
-                    @csrf
-                    <input type="hidden" id="reasonFinal" name="reason_final" value="">
-                </form>
-
-                {{-- aksi --}}
-                @if($isPengajuan)
-                    <div class="flex items-center gap-2">
-
-                        <button type="button"
-                                onclick="openVerifyConfirm()"
-                                class="h-9 w-9 rounded-full bg-emerald-600 text-white flex items-center justify-center hover:bg-emerald-700 transition"
-                                title="Verifikasi">
-                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.2"
-                                      stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </button>
-
-                        <button type="button"
-                                onclick="openRejectStep1()"
-                                class="h-9 w-9 rounded-full bg-red-600 text-white flex items-center justify-center hover:bg-red-700 transition"
-                                title="Tolak">
-                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                <path d="M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
-                                <path d="M6 6l12 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
-                            </svg>
-                        </button>
-
-                    </div>
                 @endif
             </div>
 
@@ -258,6 +215,48 @@
         </div>
 
     </div>
+
+    {{-- =========================
+        BOTTOM ACTION BAR (SAMA SEPERTI MITRA)
+    ========================== --}}
+    @if($showActions)
+        {{-- form global (anti 404, submit dari modal) --}}
+        <form id="verifyForm" method="POST"
+              action="{{ route('sa.verifikasi.customer.verify', ['id' => $customer->id]) }}"
+              class="hidden">
+            @csrf
+        </form>
+
+        <form id="rejectForm" method="POST"
+              action="{{ route('sa.verifikasi.customer.reject', ['id' => $customer->id]) }}"
+              class="hidden">
+            @csrf
+            <input type="hidden" id="reasonFinal" name="reason_final" value="">
+        </form>
+
+        <div class="sticky bottom-0 z-40">
+            <div class="max-w-[1200px] mx-auto px-4 md:px-6 pb-4">
+                <div class="flex justify-start gap-4">
+                    {{-- BATAL (outline putih seperti mitra) --}}
+                    <button type="button"
+                            onclick="openRejectStep1()"
+                            class="h-[44px] px-8 rounded-xl bg-white border border-slate-200 text-slate-700
+                                   font-semibold hover:bg-slate-50 active:scale-[0.99] transition">
+                        Tolak
+                    </button>
+
+                    {{-- SIMPAN / VERIFIKASI (biru seperti mitra) --}}
+                    <button type="button"
+                            onclick="openVerifyConfirm()"
+                            class="h-[44px] px-8 rounded-xl bg-[#0B3A82] text-white font-semibold
+                                   hover:opacity-95 active:scale-[0.99] transition">
+                        Verifikasi
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
 </div>
 
 {{-- =======================================================
@@ -280,7 +279,6 @@
                     Kembali
                 </button>
 
-                {{-- ✅ SUBMIT GLOBAL FORM --}}
                 <button type="submit"
                         form="verifyForm"
                         class="h-12 w-[160px] rounded-xl bg-emerald-600 text-white font-semibold hover:opacity-95">
@@ -340,7 +338,6 @@
             <div class="mt-6 w-full max-w-4xl mx-auto">
                 <div class="text-[14px] text-slate-700 mb-4">Berikan alasan pembatalan verifikasi customer!</div>
 
-                {{-- ✅ TIDAK ADA FORM DI SINI (ANTI 404) --}}
                 <div class="space-y-3">
                     @foreach($reasonsCustomer as $r)
                         <label class="flex items-center gap-3 text-slate-700">
@@ -374,7 +371,6 @@
                         Kembali
                     </button>
 
-                    {{-- ✅ SUBMIT GLOBAL FORM (POST PASTI) --}}
                     <button type="submit"
                             form="rejectForm"
                             class="h-12 w-[220px] rounded-xl bg-[#FF0000] text-white font-semibold hover:opacity-95">
@@ -475,7 +471,6 @@
         if (!(t instanceof HTMLElement)) return;
         const id = t.getAttribute('data-backdrop');
         if (!id) return;
-
         hideModal(id);
     });
 

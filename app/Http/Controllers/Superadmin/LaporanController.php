@@ -55,82 +55,87 @@ class LaporanController extends Controller
         return view('superadmin.pages.laporan', compact('rows'));
     }
 
- public function detail($id)
-{
-    $report = DB::table('reports as r')
-        ->leftJoin('pesanan as p', 'p.id', '=', 'r.pesanan_id')
-        ->leftJoin('users as ur', 'ur.id', '=', 'r.reporter_user_id')
-        ->leftJoin('users as ud', 'ud.id', '=', 'r.reported_user_id')
-        ->select([
-            'r.id as report_id',
-            'r.pesanan_id',
-            'r.reporter_user_id',
-            'r.reported_user_id',
-            'r.reporter_role',
-            'r.reported_role',
-            'r.reason',
-            'r.description',
-            'r.status',
-            'r.created_at as report_created_at',
+    public function detail($id)
+    {
+        $report = DB::table('reports as r')
+            ->leftJoin('pesanan as p', 'p.id', '=', 'r.pesanan_id')
+            ->leftJoin('users as ur', 'ur.id', '=', 'r.reporter_user_id')
+            ->leftJoin('users as ud', 'ud.id', '=', 'r.reported_user_id')
+            ->select([
+                'r.id as report_id',
+                'r.pesanan_id',
+                'r.reporter_user_id',
+                'r.reported_user_id',
+                'r.reporter_role',
+                'r.reported_role',
+                'r.reason',
+                'r.description',
+                'r.status',
+                'r.created_at as report_created_at',
 
-            DB::raw("COALESCE(p.tanggal, p.created_at, r.created_at) as tanggal_tampil"),
-            'p.order_no',
-            'p.layanan',
-            'p.catatan',
+                DB::raw("COALESCE(p.tanggal, p.created_at, r.created_at) as tanggal_tampil"),
+                'p.order_no',
+                'p.layanan',
+                'p.catatan',
 
-            'ur.name as reporter_name',
-            'ud.name as reported_name',
+                'ur.name as reporter_name',
+                'ud.name as reported_name',
 
-            // ✅ data terlapor untuk panel tanggapi
-            'ud.email as reported_email',
-            'ud.phone_number as reported_phone',
-            'ud.gender as reported_gender',
-            'ud.birth_place as reported_birth_place',
-            'ud.birth_date as reported_birth_date',
-            'ud.image as reported_image',
-            'ud.is_banned as reported_is_banned',
-        ])
-        ->where('r.id', $id)
-        ->first();
+                // ✅ data terlapor untuk panel tanggapi
+                'ud.email as reported_email',
+                'ud.phone_number as reported_phone',
+                'ud.gender as reported_gender',
+                'ud.birth_place as reported_birth_place',
+                'ud.birth_date as reported_birth_date',
+                'ud.image as reported_image',
+                'ud.is_banned as reported_is_banned',
+            ])
+            ->where('r.id', $id)
+            ->first();
 
-    abort_if(!$report, 404);
+        abort_if(!$report, 404);
 
-    return view('superadmin.pages.laporan_detail', compact('report'));
-}
-public function updateReported(Request $request, $id)
-{
-    $report = DB::table('reports')->select('id', 'reported_user_id')->where('id', $id)->first();
-    abort_if(!$report, 404);
+        return view('superadmin.pages.laporan_detail', compact('report'));
+    }
 
-    // validasi ringan (silakan ketatkan sesuai kebutuhan)
-    $data = $request->validate([
-        'name'         => 'nullable|string|max:255',
-        'email'        => 'nullable|email|max:255',
-        'phone_number' => 'nullable|string|max:30',
-        'gender'       => 'nullable|in:Laki-laki,Perempuan',
-        'birth_place'  => 'nullable|string|max:255',
-        'birth_date'   => 'nullable|date',
-    ]);
+    public function updateReported(Request $request, $id)
+    {
+        $report = DB::table('reports')->select('id', 'reported_user_id')->where('id', $id)->first();
+        abort_if(!$report, 404);
 
-    DB::table('users')
-        ->where('id', $report->reported_user_id)
-        ->update($data);
+        // validasi ringan (silakan ketatkan sesuai kebutuhan)
+        $data = $request->validate([
+            'name'         => 'nullable|string|max:255',
+            'email'        => 'nullable|email|max:255',
+            'phone_number' => 'nullable|string|max:30',
+            'gender'       => 'nullable|in:Laki-laki,Perempuan',
+            'birth_place'  => 'nullable|string|max:255',
+            'birth_date'   => 'nullable|date',
+        ]);
 
-    return redirect()->route('sa.laporan.detail', ['id' => $id])
-        ->with('saved_success', true); // ini buat popup gambar 3
-}
-public function blockReported($id)
-{
-    $report = DB::table('reports')->select('id', 'reported_user_id')->where('id', $id)->first();
-    abort_if(!$report, 404);
+        DB::table('users')
+            ->where('id', $report->reported_user_id)
+            ->update($data);
 
-    DB::table('users')
-        ->where('id', $report->reported_user_id)
-        ->update(['is_banned' => 1]);
+        return redirect()->route('sa.laporan.detail', ['id' => $id])
+            ->with('saved_success', true); // ini buat popup gambar 3
+    }
 
-    return redirect()->route('sa.laporan.detail', ['id' => $id])
-        ->with('success', 'Akun terlapor berhasil diblokir.');
-}
+    // ✅ PERBAIKAN DI SINI (blockReported)
+    public function blockReported($id)
+    {
+        $report = DB::table('reports')->select('id', 'reported_user_id')->where('id', $id)->first();
+        abort_if(!$report, 404);
+
+        DB::table('users')
+            ->where('id', $report->reported_user_id)
+            ->update(['is_banned' => 1]);
+
+        // pakai session khusus block, supaya tidak bentrok dengan 'success' lain
+        return redirect()->route('sa.laporan.detail', ['id' => $id])
+            ->with('blocked_success', true)
+            ->with('blocked_message', 'Akun terlapor berhasil diblokir.');
+    }
 
     public function download(Request $request)
     {

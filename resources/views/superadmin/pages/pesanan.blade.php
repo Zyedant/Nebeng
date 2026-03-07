@@ -67,10 +67,8 @@
                 </button>
 
                 {{-- DOWNLOAD (UI only - biar tidak error route) --}}
-                <a
-                    href="#"
-                    class="h-9 px-4 rounded-lg bg-emerald-500 text-white text-[13px] flex items-center gap-2 hover:bg-emerald-600 transition"
-                >
+                <a href="{{ route('sa.transaksi.download', request()->query()) }}"
+                    class="h-9 px-4 rounded-lg bg-emerald-500 text-white text-[13px] flex items-center gap-2 hover:bg-emerald-600 transition">
                     Download
                 </a>
             </div>
