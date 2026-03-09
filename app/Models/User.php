@@ -39,9 +39,9 @@ class User extends Authenticatable
         return $this->hasOne(Customer::class);
     }
 
-    public function partner()
+   public function partner()
     {
-        return $this->hasOne(Partner::class);
+    return $this->hasOne(\App\Models\Partner::class, 'user_id');
     }
 
     public function partnerPosts()

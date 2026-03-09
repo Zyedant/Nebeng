@@ -12,6 +12,7 @@ class CustomerSeeder extends Seeder
         DB::table('customers')->insert([
             [
                 'user_id' => 7,
+                'balance' => 0,
                 'id_fullname' => 'John Doe',
                 'id_number' => '3201011807950001',
                 'id_image' => 'customers/id_john_doe.jpg',
@@ -22,6 +23,7 @@ class CustomerSeeder extends Seeder
             ],
             [
                 'user_id' => 8,
+                'balance' => 0,
                 'id_fullname' => 'Jane Smith',
                 'id_number' => '3201012202980002',
                 'id_image' => 'customers/id_jane_smith.jpg',
@@ -32,6 +34,7 @@ class CustomerSeeder extends Seeder
             ],
             [
                 'user_id' => 9,
+                'balance' => 0,
                 'id_fullname' => 'Ahmad Rizki',
                 'id_number' => '3201011009930003',
                 'id_image' => 'customers/id_ahmad_rizki.jpg',
